@@ -1,18 +1,35 @@
 import axios from 'axios';
-import { FETCH_MECHANICS_SUCCESS, FETCH_MECHANICS_FAIL } from './types';
+import { returnErrors } from './errorActions';
+import { REGISTER_MECHANIC_SUCCESS, REGISTER_MECHANIC_FAIL } from './types';
 
-export const fetchMechanics = () => async dispatch => {
-  try {
-    const res = await axios.get('/api/mechanics');
+// Register Mechanic
+export const registerMechanic = (mechanicData) => (dispatch, getState) => {
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  };
 
-    dispatch({
-      type: FETCH_MECHANICS_SUCCESS,
-      payload: res.data,
-    });
-  } catch (err) {
-    dispatch({
-      type: FETCH_MECHANICS_FAIL,
-      payload: { msg: err.response.statusText, status: err.response.status },
-    });
+  const token = getState().auth.token;
+
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
   }
+
+  axios
+    .post('/api/mechanics/register', mechanicData, config)
+    .then(res =>
+      dispatch({
+        type: REGISTER_MECHANIC_SUCCESS,
+        payload: res.data,
+      })
+    )
+    .catch(err => {
+      dispatch(
+        returnErrors(err.response.data, err.response.status, 'REGISTER_MECHANIC_FAIL')
+      );
+      dispatch({
+        type: REGISTER_MECHANIC_FAIL,
+      });
+    });
 };

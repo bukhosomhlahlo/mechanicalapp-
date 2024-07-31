@@ -1,21 +1,42 @@
-const express = require('express');
-const connectDB = require('./config/db');
-const cors = require('cors');
 require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const passport = require('passport');
+const cors = require('cors');
+
+const users = require('./routes/api/users');
+const mechanics = require('./routes/api/mechanics');
 
 const app = express();
 
-// Connect Database
-connectDB();
-
 // Middleware
-app.use(cors());
 app.use(express.json());
+app.use(cors());
 
-// Define Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/mechanics', require('./routes/mechanics'));
-app.use('/api/parts', require('./routes/parts'));
+// Connect to MongoDB
+const mongoURI = process.env.MONGO_URI;
+if (!mongoURI) {
+    throw new Error('MONGO_URI is not defined in the .env file');
+}
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+mongoose.connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.error('MongoDB connection error:', err));
+
+
+// Passport middleware
+app.use(passport.initialize());
+
+// Passport config
+require('./config/passport')(passport);
+
+// Routes
+app.use('/api/users', users);
+app.use('/api/mechanics', mechanics);
+
+const port = process.env.PORT || 5000;
+
+app.listen(port, () => console.log(`Server running on port ${port}`));
